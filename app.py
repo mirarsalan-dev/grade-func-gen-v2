@@ -3,6 +3,11 @@ import requests
 from datetime import datetime
 import config
 from pdf_generator import generate_single_result_to_buffer, generate_batch_results_to_buffer
+import os # <--- ADD THIS
+
+app = Flask(__name__)
+# Try to get the key from Vercel's environment variables, otherwise use a fallback
+app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_change_in_production')
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_change_in_production'
