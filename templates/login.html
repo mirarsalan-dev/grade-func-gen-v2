@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GradeFuncGen - Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .login-container { display: flex; height: 100vh; width: 100vw; }
+        .left-panel { flex: 1; background-color: var(--c-primary); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .right-panel { flex: 1; background-color: white; display: flex; align-items: center; justify-content: center; }
+        .login-form { width: 60%; max-width: 400px; display: flex; flex-direction: column; gap: 20px; }
+        .pwd-wrapper { display: flex; gap: 10px; }
+        .pwd-wrapper input { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="left-panel">
+            <h1 style="font-size: 80px; margin: 0;">🎓</h1>
+            <h2 style="font-size: 36px; margin: 10px 0;">GRADE FUNC GEN</h2>
+            <p style="font-size: 18px; color: #e0e7ff;">Academic Management System</p>
+        </div>
+        <div class="right-panel">
+            <form class="login-form" action="{{ url_for('authenticate') }}" method="POST">
+                <div>
+                    <h2 style="font-size: 32px; margin: 0;">Welcome Back</h2>
+                    <p style="color: var(--c-text-sub); margin-top: 5px;">Please enter your details.</p>
+                </div>
+                {% with messages = get_flashed_messages() %}
+                  {% if messages %}
+                    <div style="color: var(--c-danger); font-weight: bold;">{{ messages[0] }}</div>
+                  {% endif %}
+                {% endwith %}
+                <input type="text" name="username" placeholder="Username" required>
+                <div class="pwd-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <button type="button" class="btn" onclick="togglePwd()" style="background: #f8fafc; border: 1px solid var(--c-border);">👁️</button>
+                </div>
+                <button type="submit" class="btn btn-primary" style="padding: 15px; font-size: 16px;">Sign In</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function togglePwd() {
+            const pwd = document.getElementById('password');
+            const btn = event.currentTarget;
+            if (pwd.type === 'password') {
+                pwd.type = 'text'; btn.textContent = '🙈';
+            } else {
+                pwd.type = 'password'; btn.textContent = '👁️';
+            }
+        }
+    </script>
+</body>
+</html>

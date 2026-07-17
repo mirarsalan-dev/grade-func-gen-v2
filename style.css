@@ -1,0 +1,12 @@
+:root {
+    --c-primary: #2563eb;
+    --c-primary-hover: #1d4ed8;
+    --c-bg-main: #f1f5f9;
+    --c-bg-sidebar: #ffffff;
+    --c-bg-card: #ffffff;
+    --c-text-main: #0f172a;
+    --c-text-sub: #64748b;
+    --c-border: #e2e8f0;
+    --c-success: #10b981;
+    --c-danger: #ef4444;
+}

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam Cell - Admin Console</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-section { display: none; padding: 20px; background: var(--c-bg-card); border: 1px solid var(--c-border); border-radius: 8px; margin-top: 20px; }
+        .active-section { display: block; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; max-width: 400px; }
+        .faculty-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid var(--c-border); }
+        .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--c-border); }
+        .filter-bar { display: flex; align-items: center; gap: 15px; background: var(--c-bg-main); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; }
+        
+        /* New Full-Screen Overlay Styles */
+        #branch-selection-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: var(--c-bg-main); z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========================== -->
+    <!-- BRANCH SELECTION OVERLAY   -->
+    <!-- ========================== -->
+    <div id="branch-selection-overlay">
+        <div class="card" style="width: 400px; text-align: center; padding: 40px;">
+            <h2 style="margin-top: 0; font-size: 28px;">Welcome, Exam Cell</h2>
+            <p style="color: var(--c-text-sub); margin-bottom: 30px;">Please select an engineering branch to manage.</p>
+            
+            <select id="global-branch-select" style="width: 100%; padding: 12px; font-size: 16px; margin-bottom: 20px;">
+                <option value="IT">Information Technology (IT)</option>
+                <option value="CS">Computer Science (CS)</option>
+                <option value="EXTC">Electronics & Telecom (EXTC)</option>
+            </select>
+            
+            <button class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 16px;" onclick="enterDashboard()">Enter Dashboard</button>
+            <a href="{{ url_for('logout') }}" style="display: block; margin-top: 20px; color: var(--c-danger); text-decoration: none; font-size: 14px;">Cancel and Sign Out</a>
+        </div>
+    </div>
+
+    <!-- MAIN UI (Hidden until branch is selected) -->
+    <div style="display: flex; height: 100vh; width: 100vw;">
+        <div class="sidebar">
+            <div style="padding: 20px; text-align: center;">
+                <h2 style="color: var(--c-text-main); margin: 0;">EXAM CELL</h2>
+                <p id="current-branch-display" style="color: var(--c-primary); font-weight: bold; margin-top: 5px;">Branch: Pending</p>
+            </div>
+            
+            <div style="padding: 0 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="color: var(--c-text-sub); font-size: 11px; font-weight: bold; margin-top: 10px; padding-left: 5px;">ACADEMICS</div>
+                <button class="btn btn-primary" id="btn-sec-config" onclick="showSection('sec-config')">⚙️ Exam Configuration</button>
+                <button class="btn btn-primary" id="btn-sec-database" onclick="showSection('sec-database')" style="background: transparent; color: var(--c-text-main);">📊 Student Database</button>
+                
+                <div style="color: var(--c-text-sub); font-size: 11px; font-weight: bold; margin-top: 20px; padding-left: 5px;">USER MANAGEMENT</div>
+                <button class="btn btn-primary" id="btn-sec-hod" onclick="showSection('sec-hod')" style="background: transparent; color: var(--c-text-main);">➕ Add HOD</button>
+                <button class="btn btn-primary" id="btn-sec-faculty-add" onclick="showSection('sec-faculty-add')" style="background: transparent; color: var(--c-text-main);">➕ Add Faculty</button>
+                <button class="btn btn-danger-outline" id="btn-sec-faculty-remove" onclick="showSection('sec-faculty-remove')" style="border-color: transparent; color: var(--c-text-main);">🗑️ Remove Faculty</button>
+            </div>
+            
+            <div style="margin-top: auto; padding: 20px;">
+                <button class="btn" style="width: 100%; border: 1px solid var(--c-border); margin-bottom: 10px;" onclick="changeBranch()">🔄 Change Branch</button>
+                <a href="{{ url_for('logout') }}" class="btn" style="color: var(--c-danger); border: 1px solid var(--c-danger); background: transparent; text-decoration: none; display: block; text-align: center;">🚪 Sign Out</a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- EXAM CONFIGURATION -->
+            <div id="sec-config" class="admin-section active-section">
+                <div class="action-bar">
+                    <h2 style="margin: 0;">Exam Structure</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn" style="border: 1px solid var(--c-border); background: var(--c-bg-card);" onclick="addConfigRow()">➕ Add Subject</button>
+                        <button class="btn btn-success" onclick="saveConfig()">💾 Save Changes</button>
+                    </div>
+                </div>
+                <div class="filter-bar">
+                    <label style="font-weight: bold;">Active Semester:</label>
+                    <select id="cfg-sem" style="width: 150px;">
+                        <option value="Semester 1">Semester 1</option><option value="Semester 2">Semester 2</option>
+                        <option value="Semester 3">Semester 3</option><option value="Semester 4">Semester 4</option>
+                        <option value="Semester 5" selected>Semester 5</option><option value="Semester 6">Semester 6</option>
+                        <option value="Semester 7">Semester 7</option><option value="Semester 8">Semester 8</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadConfig()">Load Data</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th style="text-align: left;">Subject Name</th><th>Credits</th><th>Theory</th><th>Internal</th><th>Termwork</th><th>Oral/PR</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="cfg-body"></tbody>
+                </table>
+            </div>
+
+            <!-- STUDENT DATABASE -->
+            <div id="sec-database" class="admin-section">
+                <div class="action-bar">
+                    <h2 style="margin: 0;">Student Database</h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-danger-outline" onclick="deleteSelectedStudent()">🗑️ Delete Selected</button>
+                        <button class="btn btn-success" onclick="batchPrint()">🖨️ Batch Print (PDF)</button>
+                    </div>
+                </div>
+                <div class="filter-bar" style="justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <label style="font-weight: bold;">Filter:</label>
+                        <select id="db-sem" style="width: 150px;">
+                            <option value="Semester 1">Semester 1</option><option value="Semester 2">Semester 2</option>
+                            <option value="Semester 3">Semester 3</option><option value="Semester 4">Semester 4</option>
+                            <option value="Semester 5" selected>Semester 5</option><option value="Semester 6">Semester 6</option>
+                            <option value="Semester 7">Semester 7</option><option value="Semester 8">Semester 8</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="loadDatabase()">Fetch Data</button>
+                    </div>
+                    <input type="text" id="db-search" placeholder="🔍 Search Name/GR..." style="width: 250px;" onkeyup="filterDatabase()">
+                </div>
+                <table>
+                    <thead>
+                        <tr><th style="width: 40px;">Sel</th><th>GR Number</th><th style="text-align: left;">Student Name</th><th>SGPA</th><th>Status</th><th>Faculty ID</th></tr>
+                    </thead>
+                    <tbody id="db-body"></tbody>
+                </table>
+            </div>
+
+            <!-- USER MANAGEMENT SECTIONS -->
+            <!-- Add HOD -->
+            <div id="sec-hod" class="admin-section">
+                <h2 style="margin-top: 0;">Create HOD Account</h2>
+                <div class="form-group"><label>Branch</label><select id="hod-branch"><option value="IT">IT</option><option value="CS">CS</option><option value="EXTC">EXTC</option></select></div>
+                <div class="form-group"><label>Username</label><input type="text" id="hod-username" placeholder="e.g., hod_cs"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="hod-password"></div>
+                <button class="btn btn-success" onclick="createUser('hod')">Create HOD</button>
+            </div>
+            <!-- Add Faculty -->
+            <div id="sec-faculty-add" class="admin-section">
+                <h2 style="margin-top: 0;">Request Faculty Account</h2>
+                <p style="color: var(--c-text-sub); margin-top: -10px; margin-bottom: 20px;">Requires HOD Approval</p>
+                <div class="form-group"><label>Branch</label><select id="fac-branch"><option value="IT">IT</option><option value="CS">CS</option><option value="EXTC">EXTC</option></select></div>
+                <div class="form-group"><label>Username</label><input type="text" id="fac-username" placeholder="e.g., prof_john"></div>
+                <div class="form-group"><label>Password</label><input type="password" id="fac-password"></div>
+                <button class="btn btn-primary" onclick="createUser('faculty')">Send Approval Request</button>
+            </div>
+            <!-- Remove Faculty -->
+            <div id="sec-faculty-remove" class="admin-section">
+                <h2 style="margin-top: 0;">Remove Faculty</h2>
+                <div class="form-group"><label>Select Branch to Filter</label><select id="del-branch" onchange="loadFaculties()"><option value="">-- Select Branch --</option><option value="IT">IT</option><option value="CS">CS</option><option value="EXTC">EXTC</option></select></div>
+                <div id="faculty-list" style="margin-top: 20px; border: 1px solid var(--c-border); border-radius: 8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        const FIREBASE_URL = "https://theemfuncgen-default-rtdb.asia-southeast1.firebasedatabase.app/";
+        let globalBranch = '';
+        let dbDataCache = {};
+        let selectedStudentGR = null;
+
+        // --- BRANCH SELECTION LOGIC ---
+        function enterDashboard() {
+            globalBranch = document.getElementById('global-branch-select').value;
+            document.getElementById('branch-selection-overlay').style.display = 'none';
+            document.getElementById('current-branch-display').innerText = `Branch: ${globalBranch}`;
+            showSection('sec-config'); // Automatically load the config screen for the chosen branch
+        }
+
+        function changeBranch() {
+            document.getElementById('branch-selection-overlay').style.display = 'flex';
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.admin-section').forEach(el => el.classList.remove('active-section'));
+            document.getElementById(id).classList.add('active-section');
+            
+            ['btn-sec-config', 'btn-sec-database', 'btn-sec-hod', 'btn-sec-faculty-add', 'btn-sec-faculty-remove'].forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btnId === 'btn-sec-faculty-remove') {
+                    btn.style.borderColor = 'transparent'; btn.style.color = 'var(--c-text-main)';
+                } else {
+                    btn.style.background = 'transparent'; btn.style.color = 'var(--c-text-main)';
+                }
+            });
+            const activeBtn = document.getElementById(`btn-${id}`);
+            if (id === 'sec-faculty-remove') {
+                activeBtn.style.borderColor = 'var(--c-danger)'; activeBtn.style.color = 'var(--c-danger)';
+            } else {
+                activeBtn.style.background = 'var(--c-primary)'; activeBtn.style.color = 'white';
+            }
+
+            if(id === 'sec-config') loadConfig();
+        }
+
+        // --- EXAM CONFIGURATION LOGIC ---
+        async function loadConfig() {
+            if(!globalBranch) return;
+            const sem = document.getElementById('cfg-sem').value.replace(" ", "_");
+            const tbody = document.getElementById('cfg-body');
+            tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+            
+            try {
+                // Notice the addition of /${globalBranch}/ here
+                const res = await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}.json`);
+                const data = await res.json();
+                tbody.innerHTML = '';
+                
+                if (data && data.length > 0) {
+                    data.forEach(item => addConfigRow(item.name, item.cr, item.max_th, item.max_ia, item.max_tw, item.max_op));
+                } else {
+                    addConfigRow();
+                }
+            } catch (err) { tbody.innerHTML = '<tr><td colspan="7" style="color:red;">Failed to load data.</td></tr>'; }
+        }
+
+        function addConfigRow(name="", cr="3", th="80", ia="20", tw="25", op="0") {
+            const tbody = document.getElementById('cfg-body');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td style="text-align: left;"><input type="text" class="cfg-name" value="${name}" placeholder="Subject..." style="width: 90%;"></td><td><input type="text" class="grid-input cfg-cr" value="${cr}"></td><td><input type="text" class="grid-input cfg-th" value="${th}"></td><td><input type="text" class="grid-input cfg-ia" value="${ia}"></td><td><input type="text" class="grid-input cfg-tw" value="${tw}"></td><td><input type="text" class="grid-input cfg-op" value="${op}"></td><td><button class="btn btn-danger-outline" style="padding: 5px 10px;" onclick="this.closest('tr').remove()">X</button></td>`;
+            tbody.appendChild(tr);
+        }
+
+        async function saveConfig() {
+            const sem = document.getElementById('cfg-sem').value.replace(" ", "_");
+            const rows = document.querySelectorAll('#cfg-body tr');
+            let payload = [];
+            
+            rows.forEach(tr => {
+                const name = tr.querySelector('.cfg-name').value.trim();
+                if (name) {
+                    payload.push({
+                        name: name, cr: parseInt(tr.querySelector('.cfg-cr').value || 0),
+                        max_th: parseInt(tr.querySelector('.cfg-th').value || 0), max_ia: parseInt(tr.querySelector('.cfg-ia').value || 0),
+                        max_tw: parseInt(tr.querySelector('.cfg-tw').value || 0), max_op: parseInt(tr.querySelector('.cfg-op').value || 0)
+                    });
+                }
+            });
+
+            try {
+                // Notice the addition of /${globalBranch}/ here
+                await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}.json`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+                });
+                alert(`${globalBranch} Configuration Saved Successfully!`);
+            } catch (err) { alert("Network Error: Failed to save config."); }
+        }
+
+        // --- STUDENT DATABASE LOGIC ---
+        async function loadDatabase() {
+            if(!globalBranch) return;
+            const sem = document.getElementById('db-sem').value.replace(" ", "_");
+            const tbody = document.getElementById('db-body');
+            tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+            dbDataCache = {}; selectedStudentGR = null;
+            
+            try {
+                // Notice the addition of /${globalBranch}/ here
+                const res = await fetch(`${FIREBASE_URL}/students/${globalBranch}/${sem}.json`);
+                const data = await res.json();
+                
+                if (data) {
+                    dbDataCache = data; filterDatabase();
+                } else tbody.innerHTML = '<tr><td colspan="6">No records found.</td></tr>';
+            } catch (err) { tbody.innerHTML = '<tr><td colspan="6" style="color:red;">Failed to fetch database.</td></tr>'; }
+        }
+
+        function filterDatabase() {
+            const searchTxt = document.getElementById('db-search').value.toLowerCase();
+            const tbody = document.getElementById('db-body');
+            tbody.innerHTML = '';
+            
+            if(Object.keys(dbDataCache).length === 0) return tbody.innerHTML = '<tr><td colspan="6">No records to display.</td></tr>';
+
+            for (const [gr, details] of Object.entries(dbDataCache)) {
+                const name = (details.Name || "").toLowerCase();
+                const grStr = gr.toLowerCase();
+                
+                if (name.includes(searchTxt) || grStr.includes(searchTxt)) {
+                    const tr = document.createElement('tr');
+                    const statusColor = details.Status === 'PASS' ? 'var(--c-success)' : 'var(--c-danger)';
+                    const sgpa = parseFloat(details.SGPA || 0).toFixed(2);
+                    tr.innerHTML = `<td><input type="radio" name="db_select" onclick="selectedStudentGR='${gr}'"></td><td style="font-weight: bold;">${gr}</td><td style="text-align: left; font-weight: 500;">${(details.Name || "").toUpperCase()}</td><td style="font-weight: bold;">${sgpa}</td><td style="color: ${statusColor}; font-weight: bold;">${details.Status || "PENDING"}</td><td style="color: var(--c-text-sub);">${details.Teacher_ID || "N/A"}</td>`;
+                    tbody.appendChild(tr);
+                }
+            }
+        }
+
+        async function deleteSelectedStudent() {
+            if (!selectedStudentGR) return alert("Please select a student to delete.");
+            const sem = document.getElementById('db-sem').value.replace(" ", "_");
+            
+            if (confirm(`Delete student record for GR: ${selectedStudentGR}?`)) {
+                try {
+                    // Notice the addition of /${globalBranch}/ here
+                    await fetch(`${FIREBASE_URL}/students/${globalBranch}/${sem}/${selectedStudentGR}.json`, { method: 'DELETE' });
+                    delete dbDataCache[selectedStudentGR];
+                    selectedStudentGR = null; filterDatabase();
+                } catch(err) { alert("Failed to delete record."); }
+            }
+        }
+
+        function batchPrint() {
+            const sem = document.getElementById('db-sem').value.replace(" ", "_");
+            if (Object.keys(dbDataCache).length === 0) return alert("Please 'Fetch Data' for a semester first before printing.");
+            if(confirm(`Generate a Master PDF for all ${globalBranch} students in ${sem}?`)) {
+                // Route to the updated Flask backend endpoint
+                window.location.href = `/download/batch_results/${globalBranch}/${sem}`;
+            }
+        }
+
+        // User Management remains exactly the same
+        async function createUser(type) {
+            const branch = type === 'hod' ? document.getElementById('hod-branch').value : document.getElementById('fac-branch').value;
+            const username = type === 'hod' ? document.getElementById('hod-username').value.trim() : document.getElementById('fac-username').value.trim();
+            const password = type === 'hod' ? document.getElementById('hod-password').value.trim() : document.getElementById('fac-password').value.trim();
+            if (!username || !password) return alert("Fill all fields");
+            const res = await fetch(type === 'hod' ? '/api/exam_cell/add_hod' : '/api/exam_cell/add_faculty', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ branch, username, password })
+            });
+            if (res.ok) {
+                alert(type === 'hod' ? "HOD created successfully!" : "Approval request sent to HOD!");
+                document.getElementById(`${type === 'hod' ? 'hod' : 'fac'}-username`).value = "";
+                document.getElementById(`${type === 'hod' ? 'hod' : 'fac'}-password`).value = "";
+            }
+        }
+
+        async function loadFaculties() {
+            const branch = document.getElementById('del-branch').value;
+            const listDiv = document.getElementById('faculty-list');
+            listDiv.innerHTML = "<div style='padding: 10px;'>Loading...</div>";
+            if (!branch) return listDiv.innerHTML = "";
+            const res = await fetch(`${FIREBASE_URL}/users/faculty.json`);
+            const data = await res.json();
+            listDiv.innerHTML = "";
+            if (data) {
+                let found = false;
+                for (const [username, details] of Object.entries(data)) {
+                    if (details.branch === branch) {
+                        found = true;
+                        listDiv.innerHTML += `<div class="faculty-row"><div><strong>${username}</strong> <span style="font-size: 12px; color: ${details.status === 'pending' ? 'orange' : 'green'};">(${details.status})</span></div><button class="btn btn-danger-outline" style="padding: 5px 15px;" onclick="deleteFaculty('${username}')">Delete</button></div>`;
+                    }
+                }
+                if(!found) listDiv.innerHTML = "<div style='padding: 10px;'>No faculties found in this branch.</div>";
+            } else listDiv.innerHTML = "<div style='padding: 10px;'>Database empty.</div>";
+        }
+
+        async function deleteFaculty(username) {
+            if (confirm(`Are you sure you want to remove ${username}?`)) {
+                await fetch(`/api/exam_cell/remove_faculty/${username}`, { method: 'DELETE' });
+                alert("Faculty removed."); loadFaculties();
+            }
+        }
+    </script>
+</body>
+</html>
