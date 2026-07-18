@@ -19,6 +19,10 @@
             display: flex; align-items: center; justify-content: center;
         }
         #branch-selection-overlay { background: var(--c-bg-main); z-index: 9998; }
+
+        /* Password Wrapper Style */
+        .pwd-wrapper { display: flex; gap: 10px; width: 100%; }
+        .pwd-wrapper input { flex: 1; }
     </style>
 </head>
 <body>
@@ -47,7 +51,10 @@
             </div>
             <div class="form-group">
                 <label>New Password</label>
-                <input type="text" id="edit-fac-password" placeholder="Leave blank to keep current">
+                <div class="pwd-wrapper">
+                    <input type="password" id="edit-fac-password" placeholder="Leave blank to keep current">
+                    <button type="button" class="btn" onclick="togglePwd('edit-fac-password', this)" style="background: #f8fafc; border: 1px solid var(--c-border); padding: 0 12px;">👁️</button>
+                </div>
             </div>
             <div class="form-group">
                 <label>Upload Profile Photo</label>
@@ -173,17 +180,30 @@
                 <h2 style="margin-top: 0;">Create HOD Account</h2>
                 <div class="form-group"><label>Branch</label><select id="hod-branch"><option value="IT">IT</option><option value="CS">CS</option><option value="EXTC">EXTC</option></select></div>
                 <div class="form-group"><label>Username</label><input type="text" id="hod-username" placeholder="e.g., hod_cs"></div>
-                <div class="form-group"><label>Password</label><input type="password" id="hod-password"></div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="pwd-wrapper">
+                        <input type="password" id="hod-password">
+                        <button type="button" class="btn" onclick="togglePwd('hod-password', this)" style="background: #f8fafc; border: 1px solid var(--c-border); padding: 0 12px;">👁️</button>
+                    </div>
+                </div>
                 <div class="form-group"><label>Upload Profile Photo</label><input type="file" id="hod-photo-file" accept="image/png, image/jpeg" style="background: white;"><input type="hidden" id="hod-photo-base64"></div>
                 <button class="btn btn-success" onclick="createUser('hod')">Create HOD</button>
             </div>
+            
             <!-- Add Faculty -->
             <div id="sec-faculty-add" class="admin-section">
                 <h2 style="margin-top: 0;">Request Faculty Account</h2>
                 <p style="color: var(--c-text-sub); margin-top: -10px; margin-bottom: 20px;">Requires HOD Approval</p>
                 <div class="form-group"><label>Branch</label><select id="fac-branch"><option value="IT">IT</option><option value="CS">CS</option><option value="EXTC">EXTC</option></select></div>
                 <div class="form-group"><label>Username</label><input type="text" id="fac-username" placeholder="e.g., prof_john"></div>
-                <div class="form-group"><label>Password</label><input type="password" id="fac-password"></div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="pwd-wrapper">
+                        <input type="password" id="fac-password">
+                        <button type="button" class="btn" onclick="togglePwd('fac-password', this)" style="background: #f8fafc; border: 1px solid var(--c-border); padding: 0 12px;">👁️</button>
+                    </div>
+                </div>
                 <div class="form-group"><label>Upload Profile Photo</label><input type="file" id="fac-photo-file" accept="image/png, image/jpeg" style="background: white;"><input type="hidden" id="fac-photo-base64"></div>
                 <button class="btn btn-primary" onclick="createUser('faculty')">Send Approval Request</button>
             </div>
@@ -205,6 +225,18 @@
         let globalBranch = '';
         let dbDataCache = {};
         let selectedStudentGR = null;
+
+        // --- PASSWORD TOGGLE LOGIC ---
+        function togglePwd(inputId, btn) {
+            const pwdInput = document.getElementById(inputId);
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text'; 
+                btn.textContent = '🙈';
+            } else {
+                pwdInput.type = 'password'; 
+                btn.textContent = '👁️';
+            }
+        }
 
         // --- CUSTOM POPUP SYSTEM ---
         function showCustomPopup(message, title, type, confirmBtnClass = 'btn-danger-outline') {
@@ -500,6 +532,12 @@
         function openEditModal(username, status) {
             document.getElementById('edit-fac-username').value = username;
             document.getElementById('edit-fac-password').value = ""; 
+            
+            // Reset the eye icon back to hidden state
+            const pwdInput = document.getElementById('edit-fac-password');
+            pwdInput.type = 'password';
+            pwdInput.nextElementSibling.textContent = '👁️';
+
             document.getElementById('edit-fac-status').value = status;
             
             // Reset photo fields

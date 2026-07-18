@@ -258,22 +258,22 @@
         <!-- ========================== -->
         <!-- ID CARD STRUCTURE          -->
         <!-- ========================== -->
-        <div class="card" style="margin: 0 15px; padding: 15px; background: var(--c-bg-card); border-top: 4px solid var(--c-primary); display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+        <div class="card" style="margin: 0 15px; padding: 30px 15px; min-height: 240px; background: var(--c-bg-card); border-top: 4px solid var(--c-primary); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             
             <!-- Top Image (Placeholder with dynamic ID) -->
-            <div id="fac-id-photo" style="width: 90px; height: 90px; background: #e2e8f0; border-radius: 50%; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid var(--c-primary); background-size: cover; background-position: center;">
+            <div id="fac-id-photo" style="width: 100px; height: 100px; background: #e2e8f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 45px; border: 2px solid var(--c-primary); background-size: cover; background-position: center;">
                 👨‍🏫
             </div>
             
             <!-- Name and Side Department -->
-            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 10px;">
                 <div style="text-align: left; max-width: 65%;">
                     <div style="font-size: 11px; color: var(--c-text-sub); font-weight: bold;">NAME</div>
-                    <div style="font-weight: bold; font-size: 15px; color: var(--c-text-main); text-transform: capitalize; word-break: break-all;">{{ username }}</div>
+                    <div style="font-weight: bold; font-size: 16px; color: var(--c-text-main); text-transform: capitalize; word-break: break-all;">{{ username }}</div>
                 </div>
                 <div style="text-align: right; border-left: 1px solid var(--c-border); padding-left: 10px;">
                     <div style="font-size: 11px; color: var(--c-text-sub); font-weight: bold;">DEPT</div>
-                    <div style="font-weight: bold; font-size: 15px; color: var(--c-primary);">{{ branch }}</div>
+                    <div style="font-weight: bold; font-size: 16px; color: var(--c-primary);">{{ branch }}</div>
                 </div>
             </div>
         </div>
