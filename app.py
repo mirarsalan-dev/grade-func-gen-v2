@@ -19,19 +19,16 @@ def authenticate():
     username = request.form.get('username', '').strip()
     password = request.form.get('password', '').strip()
 
-    # 1. Check Hardcoded Super-Admin (Exam Cell)
     if username == "exam_cell" and password == "exam_admin":
         session['username'] = username
         session['user_type'] = "exam_cell"
         return redirect(url_for('route_user', username=username))
 
-    # 2. Check Hardcoded Principal
     if username == "principal_tcoe" and password == "tcoe":
         session['username'] = username
         session['user_type'] = "principal"
         return redirect(url_for('route_user', username=username))
 
-    # 3. Dynamic HOD Check via Firebase
     hod_req = requests.get(f"{config.FIREBASE_URL}/users/hod/{username}.json").json()
     if hod_req and hod_req.get('password') == password:
         session['username'] = username
@@ -39,7 +36,6 @@ def authenticate():
         session['branch'] = hod_req.get('branch')
         return redirect(url_for('route_user', username=username))
 
-    # 4. Dynamic Faculty Check via Firebase
     fac_req = requests.get(f"{config.FIREBASE_URL}/users/faculty/{username}.json").json()
     if fac_req and fac_req.get('password') == password:
         if fac_req.get('status') == 'approved':
@@ -97,16 +93,19 @@ def student_login():
         branch = request.form.get('branch')
         semester = request.form.get('semester')
         gr_no = request.form.get('gr_no').strip().upper()
+        dob = request.form.get('dob').strip() # Added Date of Birth extraction
         
         student_data = requests.get(f"{config.FIREBASE_URL}/students/{branch}/{semester}/{gr_no}.json").json()
-        if student_data:
+        
+        # Added DOB verification 
+        if student_data and student_data.get('DOB') == dob:
             session['student_gr'] = gr_no
             session['student_branch'] = branch
             session['student_sem'] = semester
             session['student_name'] = student_data.get('Name')
             return redirect(url_for('student_dashboard'))
         else:
-            flash("Student record not found for the selected Branch/Semester.", "error")
+            flash("Invalid GR Number or Date of Birth.", "error")
             
     return render_template('student_login.html')
 

@@ -108,7 +108,9 @@
             <div id="sec-config" class="admin-section active-section">
                 <div class="action-bar">
                     <h2 style="margin: 0;">Exam Structure</h2>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <label style="font-weight: bold;">Lock Marks After:</label>
+                        <input type="date" id="cfg-lock-date" class="grid-input" style="width: 150px; padding: 5px;">
                         <button class="btn" style="border: 1px solid var(--c-border); background: var(--c-bg-card); color: var(--c-text-main);" onclick="addConfigRow()">➕ Add Subject</button>
                         <button class="btn btn-success" onclick="saveConfig()">💾 Save Changes</button>
                     </div>
@@ -287,9 +289,18 @@
             const sem = document.getElementById('cfg-sem').value.replace(" ", "_");
             const tbody = document.getElementById('cfg-body');
             tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+            document.getElementById('cfg-lock-date').value = ""; // Clear lock date
+            
             try {
-                const res = await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}.json`);
+                // Load subjects
+                const res = await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}/subjects.json`);
                 const data = await res.json();
+                
+                // Load metadata (lock_date)
+                const metaRes = await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}/metadata.json`);
+                const metaData = await metaRes.json();
+                if(metaData && metaData.lock_date) document.getElementById('cfg-lock-date').value = metaData.lock_date;
+
                 tbody.innerHTML = '';
                 if (data && data.length > 0) data.forEach(item => addConfigRow(item.name, item.cr, item.max_th, item.max_ia, item.max_tw, item.max_op));
                 else addConfigRow();
@@ -305,6 +316,7 @@
 
         async function saveConfig() {
             const sem = document.getElementById('cfg-sem').value.replace(" ", "_");
+            const lockDate = document.getElementById('cfg-lock-date').value;
             const rows = document.querySelectorAll('#cfg-body tr');
             let payload = [];
             rows.forEach(tr => {
@@ -312,7 +324,12 @@
                 if (name) payload.push({ name: name, cr: parseInt(tr.querySelector('.cfg-cr').value || 0), max_th: parseInt(tr.querySelector('.cfg-th').value || 0), max_ia: parseInt(tr.querySelector('.cfg-ia').value || 0), max_tw: parseInt(tr.querySelector('.cfg-tw').value || 0), max_op: parseInt(tr.querySelector('.cfg-op').value || 0) });
             });
             try {
-                await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                // Save subjects
+                await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}/subjects.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                // Save lock date metadata
+                if(lockDate) {
+                    await fetch(`${FIREBASE_URL}/exam_structure/${globalBranch}/${sem}/metadata.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lock_date: lockDate }) });
+                }
                 await customAlert(`${globalBranch} Configuration Saved Successfully!`, "Success");
             } catch (err) { await customAlert("Network Error: Failed to save config.", "Error"); }
         }

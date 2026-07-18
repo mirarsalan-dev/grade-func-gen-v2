@@ -32,10 +32,15 @@ def generate_single_result_to_buffer(name, gr_no, branch, subjects):
     data = [["SUBJECT", "CR", "TH", "IA", "TW", "OP", "TOTAL", "GRADE", "STATUS"]]
     total_cr = 0
     total_cg = 0
+    has_kt = False
     
     for sub in subjects:
+        sub_name = sub.get("Name", "")
+        if "*" in sub_name:
+            has_kt = True
+            
         data.append([
-            sub.get("Name", ""),
+            sub_name,
             str(sub.get("Credits", 0)),
             str(sub.get("TH", 0)),
             str(sub.get("IA", 0)),
@@ -81,6 +86,12 @@ def generate_single_result_to_buffer(name, gr_no, branch, subjects):
     c.setFillColor(status_color)
     c.drawString(400, y_pos, f"RESULT: {overall_status}")
     
+    # --- ATKT FOOTNOTE ---
+    if has_kt:
+        c.setFillColorRGB(0.4, 0.4, 0.4)  # Dark Gray
+        c.setFont("Helvetica-Oblique", 10)
+        c.drawString(50, y_pos - 30, "* Indicates subject cleared via ATKT (Grade Point capped)")
+    
     c.save()
     buffer.seek(0)
     return buffer
@@ -93,6 +104,7 @@ def generate_batch_results_to_buffer(semester_name, students_dict):
     for gr_no, data in students_dict.items():
         name = data.get("Name", "Unknown")
         subjects = data.get("Subjects", [])
+        has_kt = False
         
         # --- HEADER ---
         c.setFillColorRGB(0.14, 0.38, 0.92) 
@@ -120,8 +132,12 @@ def generate_batch_results_to_buffer(semester_name, students_dict):
         overall_status = data.get("Status", "PENDING")
         
         for sub in subjects:
+            sub_name = sub.get("Name", "")
+            if "*" in sub_name:
+                has_kt = True
+                
             table_data.append([
-                sub.get("Name", ""),
+                sub_name,
                 str(sub.get("Credits", 0)),
                 str(sub.get("TH", 0)),
                 str(sub.get("IA", 0)),
@@ -175,6 +191,12 @@ def generate_batch_results_to_buffer(semester_name, students_dict):
         c.setFillColor(status_color)
         c.drawString(400, y_pos, f"RESULT: {overall_status}")
         
+        # --- ATKT FOOTNOTE ---
+        if has_kt:
+            c.setFillColorRGB(0.4, 0.4, 0.4) 
+            c.setFont("Helvetica-Oblique", 10)
+            c.drawString(50, y_pos - 30, "* Indicates subject cleared via ATKT (Grade Point capped)")
+            
         c.showPage()  
         
     c.save()

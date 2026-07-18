@@ -248,7 +248,6 @@
             });
         }
 
-        // --- MERIT LIST & PDF GENERATION LOGIC ---
         async function loadMerit() {
             const sem = document.getElementById('me_sem').value.replace(" ", "_");
             const tbody = document.getElementById('merit-body');
@@ -272,7 +271,6 @@
                             <td style="color: var(--c-text-sub);">${student.Teacher_ID || "N/A"}</td>
                         `;
                         
-                        // Attach double-click event to VIEW the PDF in a new tab
                         tr.querySelector('.student-name-cell').addEventListener('dblclick', () => {
                             viewGradeCard(student, userBranch);
                         });
@@ -297,12 +295,10 @@
                 });
                 
                 if (res.ok) {
-                    // Convert to Blob and explicitly cast type to application/pdf so browser renders it
                     const rawBlob = await res.blob();
                     const pdfBlob = new Blob([rawBlob], { type: 'application/pdf' });
                     const url = window.URL.createObjectURL(pdfBlob);
                     
-                    // Open in a new browser tab/view screen
                     window.open(url, '_blank');
                 } else {
                     alert("Failed to generate PDF.");
@@ -340,19 +336,48 @@
 
         async function loadHODProfile() {
             try {
-                // Fetch current HOD details to get the photo
                 const res = await fetch(`${FIREBASE_URL}/users/hod/{{ username }}.json`);
                 const data = await res.json();
                 
                 if (data && data.photo) {
                     const photoDiv = document.getElementById('hod-id-photo');
-                    photoDiv.innerHTML = ''; // Remove the default emoji
-                    photoDiv.style.backgroundImage = `url(${data.photo})`; // Apply Base64 image
+                    photoDiv.innerHTML = ''; 
+                    photoDiv.style.backgroundImage = `url(${data.photo})`; 
                 }
             } catch (err) { 
                 console.error("Error loading profile:", err); 
             }
         }
+
+        // Real-Time Status Alerts Polling
+        setInterval(async () => {
+            try {
+                const res = await fetch(`${FIREBASE_URL}/users/faculty.json`);
+                const data = await res.json();
+                let pendingCount = 0;
+                
+                if (data) {
+                    for (const [username, details] of Object.entries(data)) {
+                        if (details.status === 'pending' && details.branch === userBranch) {
+                            pendingCount++;
+                        }
+                    }
+                }
+                
+                const approvalsViewActive = document.getElementById('view-approvals').style.display === 'block';
+                
+                if (pendingCount > 0 && !approvalsViewActive) {
+                    const overlay = document.getElementById('custom-popup-overlay');
+                    if(!overlay || (overlay && overlay.style.display !== 'flex')) {
+                        if(confirm(`Notification: You have ${pendingCount} new faculty approval requests.`)) {
+                            switchView('approvals');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }, 30000); 
 
         window.onload = () => {
             loadAnalytics();
