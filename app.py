@@ -6,7 +6,6 @@ from pdf_generator import generate_single_result_to_buffer, generate_batch_resul
 import os
 
 app = Flask(__name__)
-# Try to get the key from Vercel's environment variables, otherwise use a fallback
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_change_in_production')
 
 @app.route('/')
@@ -66,14 +65,10 @@ def route_user(username):
         return redirect(url_for('login_page'))
 
     user_type = session.get('user_type')
-    if user_type == "principal":
-        return redirect(url_for('principal_dashboard'))
-    elif user_type == "hod":
-        return redirect(url_for('hod_dashboard'))
-    elif user_type == "exam_cell":
-        return redirect(url_for('exam_cell_dashboard'))
-    else:
-        return redirect(url_for('teacher_portal'))
+    if user_type == "principal": return redirect(url_for('principal_dashboard'))
+    elif user_type == "hod": return redirect(url_for('hod_dashboard'))
+    elif user_type == "exam_cell": return redirect(url_for('exam_cell_dashboard'))
+    else: return redirect(url_for('teacher_portal'))
 
 @app.route('/principal')
 def principal_dashboard():
@@ -95,15 +90,46 @@ def exam_cell_dashboard():
     if session.get('user_type') != "exam_cell": return redirect(url_for('login_page'))
     return render_template('exam_cell.html')
 
+# --- STUDENT PORTAL ROUTES ---
+@app.route('/student_login', methods=['GET', 'POST'])
+def student_login():
+    if request.method == 'POST':
+        branch = request.form.get('branch')
+        semester = request.form.get('semester')
+        gr_no = request.form.get('gr_no').strip().upper()
+        
+        student_data = requests.get(f"{config.FIREBASE_URL}/students/{branch}/{semester}/{gr_no}.json").json()
+        if student_data:
+            session['student_gr'] = gr_no
+            session['student_branch'] = branch
+            session['student_sem'] = semester
+            session['student_name'] = student_data.get('Name')
+            return redirect(url_for('student_dashboard'))
+        else:
+            flash("Student record not found for the selected Branch/Semester.", "error")
+            
+    return render_template('student_login.html')
+
+@app.route('/student_dashboard')
+def student_dashboard():
+    if 'student_gr' not in session: return redirect(url_for('student_login'))
+    return render_template('student_dashboard.html', gr=session['student_gr'], name=session['student_name'], branch=session['student_branch'], sem=session['student_sem'])
+
+@app.route('/student_logout')
+def student_logout():
+    session.pop('student_gr', None)
+    session.pop('student_branch', None)
+    session.pop('student_sem', None)
+    session.pop('student_name', None)
+    return redirect(url_for('student_login'))
+
 # --- USER MANAGEMENT API ROUTES ---
 @app.route('/api/exam_cell/add_hod', methods=['POST'])
 def api_add_hod():
     if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
     data = request.json
     payload = {"password": data['password'], "branch": data['branch']}
-    if data.get('photo'): 
-        payload['photo'] = data['photo']
-        
+    if data.get('photo'): payload['photo'] = data['photo']
     requests.put(f"{config.FIREBASE_URL}/users/hod/{data['username']}.json", json=payload)
     return {"status": "success"}
 
@@ -112,9 +138,7 @@ def api_add_faculty():
     if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
     data = request.json
     payload = {"password": data['password'], "branch": data['branch'], "status": "pending"}
-    if data.get('photo'): 
-        payload['photo'] = data['photo']
-        
+    if data.get('photo'): payload['photo'] = data['photo']
     requests.put(f"{config.FIREBASE_URL}/users/faculty/{data['username']}.json", json=payload)
     return {"status": "success"}
 
@@ -122,28 +146,20 @@ def api_add_faculty():
 def api_edit_faculty(username):
     if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
     data = request.json
-    
     update_data = {}
     if data.get('password'): update_data['password'] = data['password']
     if data.get('photo'): update_data['photo'] = data['photo']
-        
-    if update_data:
-        requests.patch(f"{config.FIREBASE_URL}/users/faculty/{username}.json", json=update_data)
-        
+    if update_data: requests.patch(f"{config.FIREBASE_URL}/users/faculty/{username}.json", json=update_data)
     return {"status": "success"}
 
 @app.route('/api/principal/edit_profile', methods=['PATCH'])
 def api_edit_principal():
     if session.get('user_type') != "principal": return {"error": "Unauthorized"}, 401
     data = request.json
-    
     update_data = {}
     if data.get('name'): update_data['name'] = data['name']
     if data.get('photo'): update_data['photo'] = data['photo']
-        
-    if update_data:
-        requests.patch(f"{config.FIREBASE_URL}/users/principal/profile.json", json=update_data)
-        
+    if update_data: requests.patch(f"{config.FIREBASE_URL}/users/principal/profile.json", json=update_data)
     return {"status": "success"}
 
 @app.route('/api/exam_cell/remove_faculty/<username>', methods=['DELETE'])
@@ -158,10 +174,8 @@ def api_handle_approval():
     data = request.json
     username = data['username']
     action = data['action']
-    if action == 'approve':
-        requests.patch(f"{config.FIREBASE_URL}/users/faculty/{username}.json", json={"status": "approved"})
-    elif action == 'decline':
-        requests.delete(f"{config.FIREBASE_URL}/users/faculty/{username}.json")
+    if action == 'approve': requests.patch(f"{config.FIREBASE_URL}/users/faculty/{username}.json", json={"status": "approved"})
+    elif action == 'decline': requests.delete(f"{config.FIREBASE_URL}/users/faculty/{username}.json")
     return {"status": "success"}
 
 # --- PDF & LOGGING API ROUTES ---

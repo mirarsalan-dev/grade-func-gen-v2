@@ -1,4 +1,3 @@
-# pdf_generator.py
 import io
 import base64
 from reportlab.lib.pagesizes import A4

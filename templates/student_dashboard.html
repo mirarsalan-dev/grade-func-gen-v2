@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Portal - {{ name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+        window.addEventListener('DOMContentLoaded', () => { if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); });
+    </script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2 style="color: var(--c-text-main); text-align: center; margin-top: 15px;">STUDENT</h2>
+        
+        <div class="card" style="margin: 0 15px; padding: 20px; text-align: center;">
+            <div style="font-weight: bold; font-size: 16px;">{{ name }}</div>
+            <div style="color: var(--c-text-sub); font-size: 14px; margin-top: 5px;">{{ gr }}</div>
+            <div style="color: var(--c-primary); font-weight: bold; margin-top: 10px;">{{ branch }}</div>
+        </div>
+
+        <div style="margin-top: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn" style="border: 1px solid var(--c-border);" onclick="toggleDarkMode()">🌙 Toggle Theme</button>
+            <button class="btn btn-primary" onclick="downloadMyResult()">📥 Download Grade Card</button>
+            <a href="{{ url_for('logout') }}" class="btn btn-danger-outline" style="text-decoration: none; text-align: center;">Logout</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1 style="margin: 0; font-size: 24px;">Academic Record: {{ sem }}</h1>
+        <div id="result-status" style="margin-top: 10px; margin-bottom: 20px; font-weight: bold; font-size: 18px; padding: 15px; background: var(--c-bg-card); border: 1px solid var(--c-border); border-radius: 8px;"></div>
+        
+        <table id="marks-table">
+            <thead>
+                <tr><th style="text-align: left;">Subject</th><th>Credits</th><th>Total Marks</th><th>Grade</th><th>CG</th><th>Status</th></tr>
+            </thead>
+            <tbody id="student-marks-body"><tr><td colspan="6">Loading your results...</td></tr></tbody>
+        </table>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://theemfuncgen-default-rtdb.asia-southeast1.firebasedatabase.app/";
+        const st_branch = "{{ branch }}"; const st_sem = "{{ sem }}"; const st_gr = "{{ gr }}";
+        let rawStudentData = null;
+
+        async function loadMyResults() {
+            try {
+                const res = await fetch(`${FIREBASE_URL}/students/${st_branch}/${st_sem}/${st_gr}.json`);
+                rawStudentData = await res.json();
+                const tbody = document.getElementById('student-marks-body');
+                tbody.innerHTML = '';
+                
+                if (rawStudentData && rawStudentData.Subjects) {
+                    rawStudentData.Subjects.forEach(sub => {
+                        const statusColor = sub.Status === 'PASS' ? 'var(--c-success)' : 'var(--c-danger)';
+                        tbody.innerHTML += `<tr><td style="text-align: left; font-weight: 500;">${sub.Name}</td><td>${sub.Credits}</td><td>${sub.Total}</td><td style="font-weight: bold;">${sub.Grade}</td><td>${sub.CG}</td><td style="color: ${statusColor}; font-weight: bold;">${sub.Status}</td></tr>`;
+                    });
+                    const overallColor = rawStudentData.Status === 'PASS' ? 'var(--c-success)' : 'var(--c-danger)';
+                    document.getElementById('result-status').innerHTML = `SGPA: <span style="color: var(--c-primary);">${parseFloat(rawStudentData.SGPA).toFixed(2)}</span> | Overall Status: <span style="color: ${overallColor};">${rawStudentData.Status}</span>`;
+                }
+            } catch(err) { document.getElementById('student-marks-body').innerHTML = '<tr><td colspan="6" style="color:var(--c-danger);">Error loading records.</td></tr>'; }
+        }
+
+        async function downloadMyResult() {
+            if (!rawStudentData) return alert("Data not loaded yet.");
+            try {
+                const res = await fetch('/download/single_result', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: rawStudentData.Name, gr_no: st_gr, branch: st_branch, subjects: rawStudentData.Subjects || [] })
+                });
+                if (res.ok) {
+                    const blob = await res.blob(); const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = `${st_gr}_GradeCard.pdf`;
+                    document.body.appendChild(a); a.click(); a.remove();
+                } else alert("Failed to generate PDF.");
+            } catch (err) { alert("Network error."); }
+        }
+        window.onload = loadMyResults;
+    </script>
+</body>
+</html>

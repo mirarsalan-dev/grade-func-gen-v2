@@ -13,11 +13,10 @@
     --c-danger: #ef4444;
 }
 
-body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--c-bg-main); color: var(--c-text-main); display: flex; height: 100vh; overflow: hidden; }
-
-.sidebar { width: 260px; background-color: var(--c-bg-sidebar); border-right: 1px solid var(--c-border); display: flex; flex-direction: column; padding: 20px 0; }
+body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--c-bg-main); color: var(--c-text-main); display: flex; height: 100vh; overflow: hidden; transition: background-color 0.3s, color 0.3s; }
+.sidebar { width: 260px; background-color: var(--c-bg-sidebar); border-right: 1px solid var(--c-border); display: flex; flex-direction: column; padding: 20px 0; transition: background-color 0.3s, border-color 0.3s; }
 .main-content { flex: 1; padding: 30px; overflow-y: auto; }
-.card { background-color: var(--c-bg-card); border: 1px solid var(--c-border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.card { background-color: var(--c-bg-card); border: 1px solid var(--c-border); border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: background-color 0.3s, border-color 0.3s; }
 
 .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .btn-primary { background-color: var(--c-primary); color: white; }
@@ -25,7 +24,7 @@ body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--c-b
 .btn-success { background-color: var(--c-success); color: white; }
 .btn-danger-outline { background-color: transparent; border: 1px solid var(--c-danger); color: var(--c-danger); }
 
-input, select { padding: 10px; border: 1px solid var(--c-border); border-radius: 6px; background-color: #f8fafc; color: var(--c-text-main); font-family: 'Roboto', sans-serif; }
+input, select { padding: 10px; border: 1px solid var(--c-border); border-radius: 6px; background-color: #f8fafc; color: var(--c-text-main); font-family: 'Roboto', sans-serif; transition: background-color 0.3s, color 0.3s; }
 input:focus, select:focus { outline: none; border-color: var(--c-primary); }
 
 table { width: 100%; border-collapse: collapse; background: var(--c-bg-card); border-radius: 8px; overflow: hidden; }
@@ -33,3 +32,17 @@ th, td { padding: 12px 15px; text-align: center; border-bottom: 1px solid var(--
 th { background-color: #f8fafc; color: var(--c-text-sub); font-weight: 700; font-size: 0.85rem; text-transform: uppercase; }
 .grid-input { width: 50px; text-align: center; padding: 8px 4px; }
 .readonly { background-color: #e2e8f0; pointer-events: none; border: none; }
+
+/* --- DARK MODE OVERRIDES --- */
+body.dark-mode {
+    --c-bg-main: #0f172a;
+    --c-bg-sidebar: #1e293b;
+    --c-bg-card: #1e293b;
+    --c-text-main: #f8fafc;
+    --c-text-sub: #94a3b8;
+    --c-border: #334155;
+}
+body.dark-mode input, body.dark-mode select { background-color: #334155; color: white; border-color: #475569; }
+body.dark-mode th { background-color: #0f172a; color: #cbd5e1; }
+body.dark-mode .readonly { background-color: #0f172a; }
+body.dark-mode .btn-danger-outline { color: #f87171; border-color: #f87171; }

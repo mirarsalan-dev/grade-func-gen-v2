@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GradeFuncGen - Student Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <style>
+        .login-container { display: flex; height: 100vh; width: 100vw; }
+        .left-panel { flex: 1; background-color: var(--c-primary); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .right-panel { flex: 1; background-color: var(--c-bg-card); display: flex; align-items: center; justify-content: center; }
+        .login-form { width: 60%; max-width: 400px; display: flex; flex-direction: column; gap: 20px; }
+    </style>
+    <script>window.addEventListener('DOMContentLoaded', () => { if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); });</script>
+</head>
+<body>
+    <div class="login-container">
+        <div class="left-panel">
+            <h1 style="font-size: 80px; margin: 0;">📖</h1>
+            <h2 style="font-size: 36px; margin: 10px 0;">STUDENT PORTAL</h2>
+            <a href="{{ url_for('login_page') }}" class="btn" style="background: transparent; color: white; border: 1px solid white; margin-top: 30px;">Return to Staff Login</a>
+        </div>
+        <div class="right-panel">
+            <form class="login-form" action="{{ url_for('student_login') }}" method="POST">
+                <div>
+                    <h2 style="font-size: 32px; margin: 0;">View Results</h2>
+                    <p style="color: var(--c-text-sub); margin-top: 5px;">Enter details to pull your grade card.</p>
+                </div>
+                {% with messages = get_flashed_messages() %}
+                  {% if messages %}<div style="color: var(--c-danger); font-weight: bold;">{{ messages[0] }}</div>{% endif %}
+                {% endwith %}
+                <select name="branch" required>
+                    <option value="" disabled selected>Select Branch</option>
+                    <option value="IT">Information Technology</option><option value="CS">Computer Science</option><option value="EXTC">Electronics & Telecom</option>
+                </select>
+                <select name="semester" required>
+                    <option value="" disabled selected>Select Semester</option>
+                    <option value="Semester 1">Semester 1</option><option value="Semester 2">Semester 2</option><option value="Semester 3">Semester 3</option><option value="Semester 4">Semester 4</option><option value="Semester 5">Semester 5</option><option value="Semester 6">Semester 6</option><option value="Semester 7">Semester 7</option><option value="Semester 8">Semester 8</option>
+                </select>
+                <input type="text" name="gr_no" placeholder="Enter GR Number" required>
+                <button type="submit" class="btn btn-primary" style="padding: 15px; font-size: 16px;">View Grade Card</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
