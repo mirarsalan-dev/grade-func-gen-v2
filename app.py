@@ -26,7 +26,13 @@ def authenticate():
         session['user_type'] = "exam_cell"
         return redirect(url_for('route_user', username=username))
 
-    # 2. Dynamic HOD Check via Firebase
+    # 2. Check Hardcoded Principal
+    if username == "principal_tcoe" and password == "tcoe":
+        session['username'] = username
+        session['user_type'] = "principal"
+        return redirect(url_for('route_user', username=username))
+
+    # 3. Dynamic HOD Check via Firebase
     hod_req = requests.get(f"{config.FIREBASE_URL}/users/hod/{username}.json").json()
     if hod_req and hod_req.get('password') == password:
         session['username'] = username
@@ -34,7 +40,7 @@ def authenticate():
         session['branch'] = hod_req.get('branch')
         return redirect(url_for('route_user', username=username))
 
-    # 3. Dynamic Faculty Check via Firebase
+    # 4. Dynamic Faculty Check via Firebase
     fac_req = requests.get(f"{config.FIREBASE_URL}/users/faculty/{username}.json").json()
     if fac_req and fac_req.get('password') == password:
         if fac_req.get('status') == 'approved':
@@ -60,23 +66,28 @@ def route_user(username):
         return redirect(url_for('login_page'))
 
     user_type = session.get('user_type')
-    if user_type == "hod":
+    if user_type == "principal":
+        return redirect(url_for('principal_dashboard'))
+    elif user_type == "hod":
         return redirect(url_for('hod_dashboard'))
     elif user_type == "exam_cell":
         return redirect(url_for('exam_cell_dashboard'))
     else:
         return redirect(url_for('teacher_portal'))
 
+@app.route('/principal')
+def principal_dashboard():
+    if session.get('user_type') != "principal": return redirect(url_for('login_page'))
+    return render_template('principal_dashboard.html', username=session['username'])
+
 @app.route('/teacher')
 def teacher_portal():
     if session.get('user_type') != "faculty": return redirect(url_for('login_page'))
-    # Pass the branch down to the template so frontend JS knows which DB branch to query
     return render_template('teacher_portal.html', username=session['username'], branch=session.get('branch', 'IT'))
 
 @app.route('/hod')
 def hod_dashboard():
     if session.get('user_type') != "hod": return redirect(url_for('login_page'))
-    # Pass both branch and username down for ID Card profile loading
     return render_template('hod_dashboard.html', branch=session.get('branch', 'IT'), username=session['username'])
 
 @app.route('/exam_cell')
@@ -113,13 +124,25 @@ def api_edit_faculty(username):
     data = request.json
     
     update_data = {}
-    if data.get('password'):
-        update_data['password'] = data['password']
-    if data.get('photo'):
-        update_data['photo'] = data['photo']
+    if data.get('password'): update_data['password'] = data['password']
+    if data.get('photo'): update_data['photo'] = data['photo']
         
     if update_data:
         requests.patch(f"{config.FIREBASE_URL}/users/faculty/{username}.json", json=update_data)
+        
+    return {"status": "success"}
+
+@app.route('/api/principal/edit_profile', methods=['PATCH'])
+def api_edit_principal():
+    if session.get('user_type') != "principal": return {"error": "Unauthorized"}, 401
+    data = request.json
+    
+    update_data = {}
+    if data.get('name'): update_data['name'] = data['name']
+    if data.get('photo'): update_data['photo'] = data['photo']
+        
+    if update_data:
+        requests.patch(f"{config.FIREBASE_URL}/users/principal/profile.json", json=update_data)
         
     return {"status": "success"}
 
