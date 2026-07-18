@@ -146,8 +146,8 @@ def download_single_result():
         gr_no=data.get('gr_no'), 
         # Safely determine the branch from either the request or the session
         branch=data.get('branch', session.get('branch', 'Information Technology')), 
-        subjects=data.get('subjects'), 
-        photo_base64=data.get('photoStr')
+        subjects=data.get('subjects')
+        # photo_base64 parameter removed here
     )
     filename = f"{data.get('gr_no')}_{data.get('name').replace(' ', '_')}_GradeCard.pdf"
     return send_file(pdf_buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')

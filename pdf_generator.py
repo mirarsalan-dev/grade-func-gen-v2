@@ -5,10 +5,9 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
-from reportlab.lib.utils import ImageReader
 import config
 
-def generate_single_result_to_buffer(name, gr_no, branch, subjects, photo_base64=None):
+def generate_single_result_to_buffer(name, gr_no, branch, subjects):
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
@@ -29,16 +28,6 @@ def generate_single_result_to_buffer(name, gr_no, branch, subjects, photo_base64
     c.setFont("Helvetica-Bold", 12)
     c.drawString(50, height - 140, f"Student Name: {name.upper()}")
     c.drawString(50, height - 160, f"GR Number: {gr_no}")
-    
-    # Drawing Student Image from Base64 Memory Buffer
-    if photo_base64:
-        try:
-            img_data = base64.b64decode(photo_base64)
-            img_buffer = io.BytesIO(img_data)
-            img = ImageReader(img_buffer)
-            c.drawImage(img, width - 130, height - 190, width=80, height=80)
-        except Exception as e: 
-            print(f"Could not load image: {e}")
             
     # --- MARKS TABLE ---
     data = [["SUBJECT", "CR", "TH", "IA", "TW", "OP", "TOTAL", "GRADE", "STATUS"]]
@@ -122,17 +111,6 @@ def generate_batch_results_to_buffer(semester_name, students_dict):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, height - 140, f"Student Name: {name.upper()}")
         c.drawString(50, height - 160, f"GR Number: {gr_no}")
-        
-        # --- DRAW STUDENT IMAGE ---
-        photo_str = data.get("PhotoStr")
-        if photo_str:
-            try:
-                img_data = base64.b64decode(photo_str)
-                img_buffer = io.BytesIO(img_data)
-                img = ImageReader(img_buffer)
-                c.drawImage(img, width - 130, height - 190, width=80, height=80)
-            except Exception as e:
-                print(f"Could not load image for {gr_no}: {e}")
         
         # --- MARKS TABLE ---
         table_data = [["SUBJECT", "CR", "TH", "IA", "TW", "OP", "TOTAL", "GRADE", "STATUS"]]
