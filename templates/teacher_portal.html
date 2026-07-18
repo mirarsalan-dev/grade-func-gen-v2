@@ -14,7 +14,7 @@
             const tbody = document.getElementById('marks-body');
             tbody.innerHTML = ''; 
             try {
-                // UPDATED: Now fetches from the specific branch
+                // Fetches from the specific branch
                 const res = await fetch(`${FIREBASE_URL}/exam_structure/${userBranch}/${sem}.json`);
                 const data = await res.json();
                 
@@ -129,7 +129,7 @@
             if (!gr) return alert("Please enter a GR Number to search.");
 
             try {
-                // UPDATED: Now fetches from the specific branch
+                // Fetches from the specific branch
                 const res = await fetch(`${FIREBASE_URL}/students/${userBranch}/${sem}/${gr}.json`);
                 const data = await res.json();
                 
@@ -195,7 +195,7 @@
             };
 
             try {
-                // 1. Save to Firebase (UPDATED: specific branch)
+                // 1. Save to Firebase 
                 await fetch(`${FIREBASE_URL}/students/${userBranch}/${sem}/${gr}.json`, {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                 });
@@ -228,26 +228,70 @@
             loadStructure();
         }
 
-        window.onload = loadStructure;
+        async function loadFacultyProfile() {
+            try {
+                // Fetch current faculty details to get the photo
+                const res = await fetch(`${FIREBASE_URL}/users/faculty/{{ username }}.json`);
+                const data = await res.json();
+                
+                if (data && data.photo) {
+                    const photoDiv = document.getElementById('fac-id-photo');
+                    photoDiv.innerHTML = ''; // Remove the default emoji
+                    photoDiv.style.backgroundImage = `url(${data.photo})`; // Apply Base64 image
+                }
+            } catch (err) { 
+                console.error("Error loading profile:", err); 
+            }
+        }
+
+        window.onload = () => {
+            loadStructure();
+            loadFacultyProfile();
+        };
     </script>
 </head>
 <body>
     <div class="sidebar">
-        <div style="padding: 0 20px; text-align: center;">
-            <h2 style="color: var(--c-text-main);">FACULTY</h2>
-            <div style="color: var(--c-primary); font-weight: bold; margin-bottom: 20px;">Branch: {{ branch }}</div>
-            <!-- Image upload space and button removed -->
+        <!-- Faculty Dashboard Title -->
+        <h2 style="color: var(--c-text-main); text-align: center; margin-top: 15px;">FACULTY</h2>
+        
+        <!-- ========================== -->
+        <!-- ID CARD STRUCTURE          -->
+        <!-- ========================== -->
+        <div class="card" style="margin: 0 15px; padding: 15px; background: var(--c-bg-card); border-top: 4px solid var(--c-primary); display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            
+            <!-- Top Image (Placeholder with dynamic ID) -->
+            <div id="fac-id-photo" style="width: 90px; height: 90px; background: #e2e8f0; border-radius: 50%; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid var(--c-primary); background-size: cover; background-position: center;">
+                👨‍🏫
+            </div>
+            
+            <!-- Name and Side Department -->
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="text-align: left; max-width: 65%;">
+                    <div style="font-size: 11px; color: var(--c-text-sub); font-weight: bold;">NAME</div>
+                    <div style="font-weight: bold; font-size: 15px; color: var(--c-text-main); text-transform: capitalize; word-break: break-all;">{{ username }}</div>
+                </div>
+                <div style="text-align: right; border-left: 1px solid var(--c-border); padding-left: 10px;">
+                    <div style="font-size: 11px; color: var(--c-text-sub); font-weight: bold;">DEPT</div>
+                    <div style="font-weight: bold; font-size: 15px; color: var(--c-primary);">{{ branch }}</div>
+                </div>
+            </div>
         </div>
+        <!-- ========================== -->
+
         <hr style="width: 80%; border-top: 1px solid var(--c-border); margin: 20px auto;">
+        
         <div style="padding: 0 20px; display: flex; flex-direction: column; gap: 10px;">
             <button class="btn btn-primary" onclick="resetForm()">➕ New Entry</button>
             <button class="btn btn-danger-outline">🗑️ Delete Entry</button>
         </div>
+        
         <div style="margin-top: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
             <a href="{{ url_for('logout') }}" class="btn" style="border: 1px solid var(--c-border); color: var(--c-text-main); text-decoration: none;">LOGOUT</a>
             <button class="btn btn-success" onclick="saveAndPDF()">SAVE & PDF</button>
         </div>
     </div>
+    
     <div class="main-content">
         <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
             <h1 style="margin: 0; font-size: 24px;">Marks Entry</h1>

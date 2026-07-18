@@ -110,6 +110,24 @@ def api_remove_faculty(username):
     requests.delete(f"{config.FIREBASE_URL}/users/faculty/{username}.json")
     return {"status": "success"}
 
+@app.route('/api/exam_cell/edit_faculty/<username>', methods=['PATCH'])
+def api_edit_faculty(username):
+    if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
+    data = request.json
+    
+    # Build the update payload to only update provided fields
+    update_data = {}
+    if data.get('password'):
+        update_data['password'] = data['password']
+    # Add photo parsing here
+    if data.get('photo'):
+        update_data['photo'] = data['photo']
+        
+    if update_data:
+        requests.patch(f"{config.FIREBASE_URL}/users/faculty/{username}.json", json=update_data)
+        
+    return {"status": "success"}
+
 @app.route('/api/hod/handle_approval', methods=['POST'])
 def api_handle_approval():
     if session.get('user_type') != "hod": return {"error": "Unauthorized"}, 401
