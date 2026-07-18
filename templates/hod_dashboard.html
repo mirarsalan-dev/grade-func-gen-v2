@@ -137,7 +137,7 @@
                 </thead>
                 <tbody id="merit-body"></tbody>
             </table>
-            <p style="font-size: 12px; color: var(--c-text-sub); margin-top: 10px;">💡 Tip: Double-click a student's name to download their Grade Card PDF.</p>
+            <p style="font-size: 12px; color: var(--c-text-sub); margin-top: 10px;">💡 Tip: Double-click a student's name to view their Grade Card.</p>
         </div>
 
         <!-- APPROVALS VIEW -->
@@ -266,15 +266,15 @@
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td style="font-weight: bold; color: var(--c-primary);">${index + 1}</td>
-                            <td class="student-name-cell" style="text-align: left; font-weight: bold; cursor: pointer; color: var(--c-primary); text-decoration: underline;" title="Double-click to download Grade Card">${(student.Name || "").toUpperCase()}</td>
+                            <td class="student-name-cell" style="text-align: left; font-weight: bold; cursor: pointer; color: var(--c-primary); text-decoration: underline;" title="Double-click to view Grade Card">${(student.Name || "").toUpperCase()}</td>
                             <td>${student["GR No"] || ""}</td>
                             <td style="font-weight: bold;">${parseFloat(student.SGPA || 0).toFixed(2)}</td>
                             <td style="color: var(--c-text-sub);">${student.Teacher_ID || "N/A"}</td>
                         `;
                         
-                        // Attach double-click event to download the PDF
+                        // Attach double-click event to VIEW the PDF in a new tab
                         tr.querySelector('.student-name-cell').addEventListener('dblclick', () => {
-                            downloadGradeCard(student, userBranch);
+                            viewGradeCard(student, userBranch);
                         });
                         
                         tbody.appendChild(tr);
@@ -283,7 +283,7 @@
             } catch (err) { tbody.innerHTML = '<tr><td colspan="5" style="color:red;">Error.</td></tr>'; }
         }
 
-        async function downloadGradeCard(student, branch) {
+        async function viewGradeCard(student, branch) {
             try {
                 const res = await fetch('/download/single_result', {
                     method: 'POST',
@@ -297,19 +297,18 @@
                 });
                 
                 if (res.ok) {
-                    const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${student["GR No"]}_${(student.Name || "").replace(/ /g, "_")}_GradeCard.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+                    // Convert to Blob and explicitly cast type to application/pdf so browser renders it
+                    const rawBlob = await res.blob();
+                    const pdfBlob = new Blob([rawBlob], { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(pdfBlob);
+                    
+                    // Open in a new browser tab/view screen
+                    window.open(url, '_blank');
                 } else {
                     alert("Failed to generate PDF.");
                 }
             } catch (err) {
-                console.error("Error downloading PDF:", err);
+                console.error("Error viewing PDF:", err);
                 alert("Network error generating Grade Card.");
             }
         }
