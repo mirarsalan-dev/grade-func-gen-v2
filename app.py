@@ -3,14 +3,11 @@ import requests
 from datetime import datetime
 import config
 from pdf_generator import generate_single_result_to_buffer, generate_batch_results_to_buffer
-import os # <--- ADD THIS
+import os
 
 app = Flask(__name__)
 # Try to get the key from Vercel's environment variables, otherwise use a fallback
 app.secret_key = os.environ.get('SECRET_KEY', 'super_secret_key_change_in_production')
-
-app = Flask(__name__)
-app.secret_key = 'super_secret_key_change_in_production'
 
 @app.route('/')
 def login_page():
@@ -79,8 +76,8 @@ def teacher_portal():
 @app.route('/hod')
 def hod_dashboard():
     if session.get('user_type') != "hod": return redirect(url_for('login_page'))
-    # Pass the branch down to the template so frontend JS knows which DB branch to query
-    return render_template('hod_dashboard.html', branch=session.get('branch', 'IT'))
+    # Pass both branch and username down for ID Card profile loading
+    return render_template('hod_dashboard.html', branch=session.get('branch', 'IT'), username=session['username'])
 
 @app.route('/exam_cell')
 def exam_cell_dashboard():
@@ -92,22 +89,22 @@ def exam_cell_dashboard():
 def api_add_hod():
     if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
     data = request.json
-    requests.put(f"{config.FIREBASE_URL}/users/hod/{data['username']}.json", 
-                 json={"password": data['password'], "branch": data['branch']})
+    payload = {"password": data['password'], "branch": data['branch']}
+    if data.get('photo'): 
+        payload['photo'] = data['photo']
+        
+    requests.put(f"{config.FIREBASE_URL}/users/hod/{data['username']}.json", json=payload)
     return {"status": "success"}
 
 @app.route('/api/exam_cell/add_faculty', methods=['POST'])
 def api_add_faculty():
     if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
     data = request.json
-    requests.put(f"{config.FIREBASE_URL}/users/faculty/{data['username']}.json", 
-                 json={"password": data['password'], "branch": data['branch'], "status": "pending"})
-    return {"status": "success"}
-
-@app.route('/api/exam_cell/remove_faculty/<username>', methods=['DELETE'])
-def api_remove_faculty(username):
-    if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
-    requests.delete(f"{config.FIREBASE_URL}/users/faculty/{username}.json")
+    payload = {"password": data['password'], "branch": data['branch'], "status": "pending"}
+    if data.get('photo'): 
+        payload['photo'] = data['photo']
+        
+    requests.put(f"{config.FIREBASE_URL}/users/faculty/{data['username']}.json", json=payload)
     return {"status": "success"}
 
 @app.route('/api/exam_cell/edit_faculty/<username>', methods=['PATCH'])
@@ -115,17 +112,21 @@ def api_edit_faculty(username):
     if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
     data = request.json
     
-    # Build the update payload to only update provided fields
     update_data = {}
     if data.get('password'):
         update_data['password'] = data['password']
-    # Add photo parsing here
     if data.get('photo'):
         update_data['photo'] = data['photo']
         
     if update_data:
         requests.patch(f"{config.FIREBASE_URL}/users/faculty/{username}.json", json=update_data)
         
+    return {"status": "success"}
+
+@app.route('/api/exam_cell/remove_faculty/<username>', methods=['DELETE'])
+def api_remove_faculty(username):
+    if session.get('user_type') != "exam_cell": return {"error": "Unauthorized"}, 401
+    requests.delete(f"{config.FIREBASE_URL}/users/faculty/{username}.json")
     return {"status": "success"}
 
 @app.route('/api/hod/handle_approval', methods=['POST'])
@@ -162,15 +163,12 @@ def download_single_result():
     pdf_buffer = generate_single_result_to_buffer(
         name=data.get('name'), 
         gr_no=data.get('gr_no'), 
-        # Safely determine the branch from either the request or the session
         branch=data.get('branch', session.get('branch', 'Information Technology')), 
         subjects=data.get('subjects')
-        # photo_base64 parameter removed here
     )
     filename = f"{data.get('gr_no')}_{data.get('name').replace(' ', '_')}_GradeCard.pdf"
     return send_file(pdf_buffer, as_attachment=True, download_name=filename, mimetype='application/pdf')
 
-# UPDATED: Now requires the branch in the URL so it retrieves the isolated data
 @app.route('/download/batch_results/<branch>/<semester>')
 def download_batch_results(branch, semester):
     d = requests.get(f"{config.FIREBASE_URL}/students/{branch}/{semester}.json").json()

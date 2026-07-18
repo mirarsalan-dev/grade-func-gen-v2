@@ -15,10 +15,34 @@
 </head>
 <body>
     <div class="sidebar">
-        <div style="padding: 20px; text-align: center;">
-            <h2 style="color: var(--c-text-main); margin: 0;">HOD PANEL</h2>
-            <p style="color: var(--c-primary); font-weight: bold; margin-top: 5px;">Branch: {{ branch }}</p>
+        <!-- Dashboard Title -->
+        <h2 style="color: var(--c-text-main); text-align: center; margin-top: 15px;">HOD PANEL</h2>
+        
+        <!-- ========================== -->
+        <!-- ID CARD STRUCTURE          -->
+        <!-- ========================== -->
+        <div class="card" style="margin: 0 15px; padding: 15px; background: var(--c-bg-card); border-top: 4px solid var(--c-primary); display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+            
+            <!-- Top Image (Placeholder with dynamic ID) -->
+            <div id="hod-id-photo" style="width: 90px; height: 90px; background: #e2e8f0; border-radius: 50%; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; border: 2px solid var(--c-primary); background-size: cover; background-position: center;">
+                👔
+            </div>
+            
+            <!-- Name and Side Department -->
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                <div style="text-align: left; max-width: 65%;">
+                    <div style="font-size: 11px; color: var(--c-text-sub); font-weight: bold;">NAME</div>
+                    <div style="font-weight: bold; font-size: 15px; color: var(--c-text-main); text-transform: capitalize; word-break: break-all;">{{ username }}</div>
+                </div>
+                <div style="text-align: right; border-left: 1px solid var(--c-border); padding-left: 10px;">
+                    <div style="font-size: 11px; color: var(--c-text-sub); font-weight: bold;">DEPT</div>
+                    <div style="font-weight: bold; font-size: 15px; color: var(--c-primary);">{{ branch }}</div>
+                </div>
+            </div>
         </div>
+        <!-- ========================== -->
+
+        <hr style="width: 80%; border-top: 1px solid var(--c-border); margin: 20px auto;">
         
         <div style="padding: 0 15px; display: flex; flex-direction: column; gap: 10px;">
             <button id="btn-analytics" class="btn btn-primary" onclick="switchView('analytics')" style="justify-content: flex-start; padding-left: 20px;">📊 Dashboard</button>
@@ -130,7 +154,7 @@
 
     <script>
         const FIREBASE_URL = "https://theemfuncgen-default-rtdb.asia-southeast1.firebasedatabase.app/";
-        const userBranch = "{{ branch }}"; // Injected by Flask
+        const userBranch = "{{ branch }}"; 
         let donutChart, gradeChart, bottleneckChart;
 
         function switchView(viewName) {
@@ -153,7 +177,6 @@
         async function loadAnalytics() {
             const sem = document.getElementById('an_sem').value.replace(" ", "_");
             try {
-                // UPDATED: Fetches data strictly for the HOD's branch
                 const res = await fetch(`${FIREBASE_URL}/students/${userBranch}/${sem}.json`);
                 const data = await res.json();
                 
@@ -229,7 +252,6 @@
             const tbody = document.getElementById('merit-body');
             tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
             try {
-                // UPDATED: Fetches data strictly for the HOD's branch
                 const res = await fetch(`${FIREBASE_URL}/students/${userBranch}/${sem}.json`);
                 const data = await res.json();
                 tbody.innerHTML = '';
@@ -271,7 +293,27 @@
                 loadApprovals();
             }
         }
-        window.onload = loadAnalytics;
+
+        async function loadHODProfile() {
+            try {
+                // Fetch current HOD details to get the photo
+                const res = await fetch(`${FIREBASE_URL}/users/hod/{{ username }}.json`);
+                const data = await res.json();
+                
+                if (data && data.photo) {
+                    const photoDiv = document.getElementById('hod-id-photo');
+                    photoDiv.innerHTML = ''; // Remove the default emoji
+                    photoDiv.style.backgroundImage = `url(${data.photo})`; // Apply Base64 image
+                }
+            } catch (err) { 
+                console.error("Error loading profile:", err); 
+            }
+        }
+
+        window.onload = () => {
+            loadAnalytics();
+            loadHODProfile();
+        };
     </script>
 </body>
 </html>
